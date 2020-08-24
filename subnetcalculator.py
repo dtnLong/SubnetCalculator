@@ -31,21 +31,6 @@ def calculate_borrow_dec(borrowed_bit_whole_count, host_bit_whole_count, non_who
     for i in range(0, host_bit_whole_count):
         borrowed_str = borrowed_str + ".0"
     return borrowed_str
-    # borrowed_whole_oct = len(borrowed_bit) // 8
-    # borrowed_non_whole_len = len(borrowed_bit) % 8
-    # if (borrowed_non_whole_len == 1):
-    #     borrowed_non_whole_bit = '1'
-    # else:
-    #     borrowed_non_whole_bit = borrowed_bit[-1 * borrowed_non_whole_len:-1]
-    # print("Borrowed_whole: ", borrowed_whole_oct)
-    # print("Borrowed non whole len: ", borrowed_non_whole_len)
-    # print("Borrowed bit: ", borrowed_bit)
-    # print("Host bit whole: ", borrowed_bit_whole)
-    # for i in range(borrowed_whole_oct):
-    #     borrowed_str = borrowed_str + '255.'
-    # borrowed_str = borrowed_str + convert(borrowed_non_whole_bit)
-    # for i in range(borrowed_bit_whole):
-    #     borrowed_str = borrowed_str + '.0'
 
 
 def convert(bin_str):
@@ -97,54 +82,39 @@ def calculate_subnet_multiplier(subnet_mask):
     return 256 - int(subnet_mask[3])
 
 
+def calculate_current_host(current_network_address):
+    current_network_address = current_network_address.split(".")
+    current_network_address = list(map(int, current_network_address))
+    current_network_address[3] = current_network_address[3] + 1
+    if current_network_address[3] > 255:
+        current_network_address[3] = 0
+        current_network_address[2] = current_network_address[2] + 1
+        if current_network_address[2] > 255:
+            current_network_address[2] = 0
+            current_network_address[1] = current_network_address[1] + 1
+            if current_network_address[1] > 255:
+                current_network_address[1] = 0
+                current_network_address[0] = current_network_address[0] + 1
+    return (str(current_network_address[0]) + "." + str(current_network_address[1]) + "."
+            + str(current_network_address[2]) + "." + str(current_network_address[3]))
+
+
 def calculate_address(ip_address, subnet_mask, subnet_host_list):
     base_network_address = calculate_network_address(ip_address, subnet_mask)
     print("Network address: ", base_network_address)
     base_subnet_multiplier = calculate_subnet_multiplier(subnet_mask)
     # subnet_multiplier_current = int(base_network_address.split(".")[3]) + base_subnet_multiplier
-    network_address_4 = int(base_network_address.split(".")[3])
-    network_address_3 = int(base_network_address.split(".")[2])
-    network_address_2 = int(base_network_address.split(".")[1])
-    network_address_1 = int(base_network_address.split(".")[0])
+    current_address = base_network_address
     for index, host in enumerate(subnet_host_list):
-        network_address = str(network_address_1) + "." + str(network_address_2) + "." + str(network_address_3) + "." + str(network_address_4)
-        print("Network address of subnet", index + 1, ": ", network_address)
-        network_address_4 = network_address_4 + 1
-        if network_address_4 > 255:
-            network_address_4 = 0
-            network_address_3 = network_address_3 + 1
-            if network_address_3 > 255:
-                network_address_3 = 0
-                network_address_2 = network_address_2 + 1
-                if network_address_2 > 255:
-                    network_address_2 = 0
-                    network_address_1 = network_address_1 + 1
+        # network_address = str(network_address_1) + "." + str(network_address_2) + "." + str(network_address_3) + "." + str(network_address_4)
+        print("Network address of subnet", index + 1, ": ", current_address)
+        current_address = calculate_current_host(current_address)
         for i in range(1, base_subnet_multiplier - 1):
             if i <= host - 2:
-                network_address = str(network_address_1) + "." + str(network_address_2) + "." + str(network_address_3) + "." + str(network_address_4)
-                print("Subnet ", index + 1, "host ", i + 1, ": ", network_address)
-            network_address_4 = network_address_4 + 1
-            if network_address_4 > 255:
-                network_address_4 = 0
-                network_address_3 = network_address_3 + 1
-                if network_address_3 > 255:
-                    network_address_3 = 0
-                    network_address_2 = network_address_2 + 1
-                    if network_address_2 > 255:
-                        network_address_2 = 0
-                        network_address_1 = network_address_1 + 1
-        network_address = str(network_address_1) + "." + str(network_address_2) + "." + str(network_address_3) + "." + str(network_address_4)
-        print("Subnet ", index + 1, "broadcast address: ", network_address)
-        network_address_4 = network_address_4 + 1
-        if network_address_4 > 255:
-            network_address_4 = 0
-            network_address_3 = network_address_3 + 1
-            if network_address_3 > 255:
-                network_address_3 = 0
-                network_address_2 = network_address_2 + 1
-                if network_address_2 > 255:
-                    network_address_2 = 0
-                    network_address_1 = network_address_1 + 1
+                print("Subnet ", index + 1, "host ", i + 1, ": ", current_address)
+            current_address = calculate_current_host(current_address)
+        print("Subnet ", index + 1, "broadcast address: ", current_address)
+        current_address = calculate_current_host(current_address)
         # network_address_4 = network_address_4 + (subnet_multiplier_current - network_address_4)
         # subnet_multiplier_current = subnet_multiplier_current + base_subnet_multiplier
         print()
