@@ -1,3 +1,6 @@
+import math
+
+
 def getIPclass(ip_str):
     first_byte = int(ip_str.split(".")[0])
     if first_byte < 128:
@@ -77,8 +80,8 @@ def calculate_network_address(ip_address, subnet_mask):
 def calculate_subnet_multiplier(subnet_mask):
     subnet_mask = subnet_mask.split(".")
     for i in range(len(subnet_mask)):
-        if subnet_mask[i] == 0:
-            return 256 - int(subnet_mask[i - 1])
+        if subnet_mask[i] == '0':
+            return int((256 - int(subnet_mask[i - 1])) * math.pow(256, 4 - i))
     return 256 - int(subnet_mask[3])
 
 
@@ -103,6 +106,7 @@ def calculate_address(ip_address, subnet_mask, subnet_host_list):
     base_network_address = calculate_network_address(ip_address, subnet_mask)
     print("Network address: ", base_network_address)
     base_subnet_multiplier = calculate_subnet_multiplier(subnet_mask)
+    print("Base subnet multiplier: ", base_subnet_multiplier)
     # subnet_multiplier_current = int(base_network_address.split(".")[3]) + base_subnet_multiplier
     current_address = base_network_address
     for index, host in enumerate(subnet_host_list):
@@ -111,7 +115,7 @@ def calculate_address(ip_address, subnet_mask, subnet_host_list):
         current_address = calculate_current_host(current_address)
         for i in range(1, base_subnet_multiplier - 1):
             if i <= host - 2:
-                print("Subnet ", index + 1, "host ", i + 1, ": ", current_address)
+                print("Subnet ", index + 1, "host ", i, ": ", current_address)
             current_address = calculate_current_host(current_address)
         print("Subnet ", index + 1, "broadcast address: ", current_address)
         current_address = calculate_current_host(current_address)
@@ -130,12 +134,14 @@ def main():
         subnet_host_list.append(host)
         if host > max_host:
             max_host = host
-    print()
     ip_class = getIPclass(ip_str)
     borrow_bits_info = calculate_borrow_bits(max_host, ip_class[1])
     print()
-    if borrow_bits_info[2] == "":
-        print("Cannot create subnets")
+    possible_borrowed_bit = ip_class[1] - int(math.log(max_host, 2) + 1)
+    if possible_borrowed_bit <= 0:
+        print("IP class don't support number of max host per subnet")
+    elif possible_borrowed_bit < int(math.log(subnets, 2)) + 1:
+        print("IP class don't support number of subnets with max host per subnet")
     else:
         subnet_mask = ip_class[0] + calculate_borrow_dec(borrow_bits_info[0], borrow_bits_info[1], borrow_bits_info[2])
         print("Subnet: ", subnet_mask)
