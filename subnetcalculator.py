@@ -138,9 +138,10 @@ def main():
     borrow_bits_info = calculate_borrow_bits(max_host, ip_class[1])
     print()
     possible_borrowed_bit = ip_class[1] - int(math.log(max_host, 2) + 1)
+    print("Possible borrowed it: ", possible_borrowed_bit)
     if possible_borrowed_bit <= 0:
         print("IP class don't support number of max host per subnet")
-    elif possible_borrowed_bit < int(math.log(subnets, 2)) + 1:
+    elif math.pow(possible_borrowed_bit, 2) < subnets:
         print("IP class don't support number of subnets with max host per subnet")
     else:
         subnet_mask = ip_class[0] + calculate_borrow_dec(borrow_bits_info[0], borrow_bits_info[1], borrow_bits_info[2])
