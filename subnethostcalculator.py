@@ -11,26 +11,26 @@ def getIPclass(ip_str):
         return ['255.255.255', 8]
 
 
-def calculate_borrow_bits(host, host_len):
-    for i in range(1, host_len + 1, 1):
-        if pow(2, i) >= host:
-            borrowed = ''
-            for bit in range(0, host_len - i, 1):
-                borrowed = borrowed + '1'
-            borrowed_bit_whole_count = len(borrowed) // 8
-            host_bit_whole_count = (host_len - len(borrowed)) // 8
-            non_whole_borrowed_bit = borrowed[-1 * len(borrowed) + borrowed_bit_whole_count * 8:]
-            print("Borrowed bit whole count: ", borrowed_bit_whole_count)
-            print("Host bit whole count: ", host_bit_whole_count)
-            print("Borrowed bit non-whole: ", non_whole_borrowed_bit)
-            return [borrowed_bit_whole_count, host_bit_whole_count, non_whole_borrowed_bit]
+def calculate_borrow_bits(custom_host_bit_len, class_host_bit_len):
+    borrowed_bit_len = class_host_bit_len - custom_host_bit_len
+    borrowed = ""
+    for bit in range(0, borrowed_bit_len, 1):
+        borrowed = borrowed + '1'
+    borrowed_bit_whole_count = borrowed_bit_len // 8
+    host_bit_whole_count = custom_host_bit_len // 8
+    non_whole_borrowed_bit = borrowed[-1 * len(borrowed) + borrowed_bit_whole_count * 8:]
+    print("Borrowed bit whole count: ", borrowed_bit_whole_count)
+    print("Host bit whole count: ", host_bit_whole_count)
+    print("Borrowed bit non-whole: ", non_whole_borrowed_bit)
+    return [borrowed_bit_whole_count, host_bit_whole_count, non_whole_borrowed_bit]
 
 
 def calculate_borrow_dec(borrowed_bit_whole_count, host_bit_whole_count, non_whole_borrowed_bit):
     borrowed_str = ''
     for i in range(0, borrowed_bit_whole_count):
         borrowed_str = borrowed_str + ".255"
-    borrowed_str = borrowed_str + "." + str(convert(non_whole_borrowed_bit))
+    if non_whole_borrowed_bit != '11111111':
+        borrowed_str = borrowed_str + "." + str(convert(non_whole_borrowed_bit))
     for i in range(0, host_bit_whole_count):
         borrowed_str = borrowed_str + ".0"
     return borrowed_str
@@ -104,7 +104,7 @@ def calculate_current_host(current_network_address):
 
 def calculate_address(ip_address, subnet_mask, subnet_host_list):
     base_network_address = calculate_network_address(ip_address, subnet_mask)
-    print("Network address: ", base_network_address)
+    print("Base network address: ", base_network_address)
     base_subnet_multiplier = calculate_subnet_multiplier(subnet_mask)
     print("Base subnet multiplier: ", base_subnet_multiplier)
     # subnet_multiplier_current = int(base_network_address.split(".")[3]) + base_subnet_multiplier
@@ -125,7 +125,13 @@ def calculate_address(ip_address, subnet_mask, subnet_host_list):
 
 
 def main():
-    ip_str = input("Enter IP address: ")
+    ip = input("Enter IP address (Ex: 192.168.100.0/25): ")
+    ip = ip.split("/")
+    ip_class_info = getIPclass(ip[0])
+    borrowed_bits_info = calculate_borrow_bits(32 - int(ip[1]), ip_class_info[1])
+    subnet_mask = ip_class_info[0] + calculate_borrow_dec(borrowed_bits_info[0], borrowed_bits_info[1], borrowed_bits_info[2])
+    print("Subnet mask: ", subnet_mask)
+    print()
     subnets = int(input("Enter needed subnets: "))
     subnet_host_list = []
     max_host = 0
@@ -134,19 +140,8 @@ def main():
         subnet_host_list.append(host)
         if host > max_host:
             max_host = host
-    ip_class = getIPclass(ip_str)
-    borrow_bits_info = calculate_borrow_bits(max_host, ip_class[1])
     print()
-    possible_borrowed_bit = ip_class[1] - int(math.log(max_host, 2) + 1)
-    print("Possible borrowed it: ", possible_borrowed_bit)
-    if possible_borrowed_bit <= 0:
-        print("IP class don't support number of max host per subnet")
-    elif math.pow(possible_borrowed_bit, 2) < subnets:
-        print("IP class don't support number of subnets with max host per subnet")
-    else:
-        subnet_mask = ip_class[0] + calculate_borrow_dec(borrow_bits_info[0], borrow_bits_info[1], borrow_bits_info[2])
-        print("Subnet: ", subnet_mask)
-        calculate_address(ip_str, subnet_mask, subnet_host_list)
+    calculate_address(ip[0], subnet_mask, subnet_host_list)
 
 
 if __name__ == '__main__':
